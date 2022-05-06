@@ -9,14 +9,24 @@ import { captureScreen } from "react-native-view-shot";
 import { styles } from "./styles";
 import { ScreenshotButton } from "../ScreenshotButton";
 import { Button } from "../Button";
+import { api } from "../../libs/api";
+import * as FileSystem from "expo-file-system";
 
 interface FormProps {
   feedbackType: FeedbackTypes;
+  onFeedbackCanceled: () => void;
+  onFeedbackSent: () => void;
 }
 
-export function Form({ feedbackType }: FormProps) {
+export function Form({
+  feedbackType,
+  onFeedbackCanceled,
+  onFeedbackSent,
+}: FormProps) {
   const feedbackTypeInfo = feedbackTypes[feedbackType];
   const [screenShot, setScreenShot] = useState<string | null>(null);
+  const [isSendingFeedback, setIsSendingFeedback] = useState<boolean>(false);
+  const [comment, setComment] = useState<string>("");
 
   function handleScreenshot() {
     captureScreen({
@@ -31,10 +41,39 @@ export function Form({ feedbackType }: FormProps) {
     setScreenShot(null);
   }
 
+  async function handleSendFeedback() {
+    if (isSendingFeedback) return;
+
+    setIsSendingFeedback(true);
+
+    const screenShotBase64 =
+      screenShot &&
+      (await FileSystem.readAsStringAsync(screenShot, { encoding: "base64" }));
+
+    try {
+      console.log({
+        type: feedbackType,
+        screenshot: `data:image/png;base64, ${screenShotBase64}`,
+        comment,
+      });
+
+      await api.post("/feedbacks", {
+        type: feedbackType,
+        screenshot: `data:image/png;base64, ${screenShotBase64}`,
+        comment,
+      });
+
+      onFeedbackSent();
+    } catch (error) {
+      console.log("ERROR --->", error);
+      setIsSendingFeedback(false);
+    }
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={onFeedbackCanceled}>
           <ArrowLeft
             size={24}
             weight="light"
@@ -52,6 +91,8 @@ export function Form({ feedbackType }: FormProps) {
         style={styles.input}
         placeholder="Descreva o seu feedback..."
         placeholderTextColor={theme.colors.text_secondary}
+        autoCorrect={false}
+        onChangeText={setComment}
       />
 
       <View style={styles.footer}>
@@ -60,7 +101,7 @@ export function Form({ feedbackType }: FormProps) {
           onRemoveShot={handleScreenshotRemove}
           screenshot={screenShot}
         />
-        <Button isLoading={false} />
+        <Button isLoading={isSendingFeedback} onPress={handleSendFeedback} />
       </View>
     </View>
   );
