@@ -1,3 +1,5 @@
+import React from "react";
+import "react-native-gesture-handler";
 import {
   useFonts,
   Inter_400Regular,
@@ -5,8 +7,9 @@ import {
 } from "@expo-google-fonts/inter";
 import AppLoading from "expo-app-loading";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
-import { Widget } from "./src/components/Widget";
+import { StyleSheet, View } from "react-native";
+import { theme } from "./src/theme";
+import Widget from "./src/components/Widget";
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -29,7 +32,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.background,
     alignItems: "center",
     justifyContent: "center",
   },
